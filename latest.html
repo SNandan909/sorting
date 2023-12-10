@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Server Client</title>
+</head>
+<body>
+
+<!-- Input field for dynamic values -->
+<label for="inputArrays">Input Arrays:</label>
+<textarea id="inputArrays" placeholder="Enter arrays in the format [3, 2, 1], [6, 5, 4], [9, 8, 7]"></textarea>
+
+<button onclick="sendRequest('/process-single')">Process Single</button>
+<button onclick="sendRequest('/process-concurrent')">Process Concurrent</button>
+
+<!-- Display the output text -->
+<div id="outputText"></div>
+
+<script>
+    async function sendRequest(endpoint) {
+        // Get the input arrays value from the textarea
+        const inputArrays = document.getElementById('inputArrays').value.trim();
+
+        // Parse the input to create an array of arrays
+        const toSortArrays = inputArrays
+            .split('],')
+            .map(subArray => subArray.replace(/\[|\]/g, '').split(',').map(Number));
+
+        // Prepare payload with dynamic values
+        const payload = { to_sort: toSortArrays };
+
+        try {
+            const response = await fetch(`http://localhost:8000${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const formattedOutput = formatOutput(data);
+            document.getElementById('outputText').innerText = formattedOutput;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+	
+    function formatOutput(data) {
+        const formattedArrays = data.sorted_arrays.map(subArray => `[${subArray.join(', ')}]`).join(',\n');
+        return `Sorted Arrays:\n${formattedArrays}\n\nTime taken: ${data.time_ns} nanoseconds`;
+    }
+	
+</script>
+
+</body>
+</html>
